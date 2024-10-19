@@ -1,46 +1,49 @@
 const fs = require('fs');
 
-function lagrangeInterpolation(points, k) {
-	let ans = 0;
-	for (let i = 0; i < k; i++) {
-		let xi = points[i][0];
-		let yi = points[i][1];
+function lagrangeInterpolation(points) {
+	let constant = 0;
 
-		let li = 1;
-		for (let j = 0; j < k; j++) {
+	for (let i = 0; i < points.length; i++) {
+		let [xi, yi] = points[i];
+		let term = yi;
+
+		for (let j = 0; j < points.length; j++) {
 			if (i !== j) {
-				let xj = points[j][0];
-				li *= (0 - xj) / (xi - xj);
+				let [xj] = points[j];
+				term *= xj / (xj - xi);
 			}
 		}
 
-		ans += li * yi;
+		constant += term;
 	}
 
-	return ans;
+	return Math.round(constant);
 }
 
 function main(filename) {
-	const file = fs.readFileSync(filename);
-	const data = JSON.parse(file);
+	const data = fs.readFileSync(filename);
+	const input = JSON.parse(data);
 
-	const n = data.keys.n;
-	const k = data.keys.k;
+	const { n, k } = input.keys;
+	let points = [];
 
-	const points = [];
-	for (let i = 1; i <= n; i++) {
-		if (data[i]) {
-			const base = parseInt(data[i].base);
-			const value = data[i].value;
-			const decodedY = parseInt(value, base);
-			points.push([i, decodedY]);
+	Object.keys(input).forEach((key) => {
+		if (!isNaN(key)) {
+			const base = parseInt(input[key].base, 10);
+			const value = input[key].value;
+			const x = parseInt(key, 10);
+			const y = parseInt(value, base);
+
+			points.push([x, y]);
 		}
-	}
+	});
+	const requiredPoints = points.slice(0, k);
 
-	const constantTerm = lagrangeInterpolation(points, k);
+	const constantTerm = lagrangeInterpolation(requiredPoints);
 
 	console.log(`secret (c) ${constantTerm}`);
 }
 
-main('./example1.json');
-main('./example2.json');
+// Run the solver with the JSON test case
+main('example1.json');
+main('example2.json');
